@@ -1,12 +1,13 @@
 package org.gvozdetscky.sarafan.controller;
 
-import org.gvozdetscky.sarafan.exception.NotFoundException;
+import org.gvozdetscky.sarafan.domain.Message;
+import org.gvozdetscky.sarafan.repository.MessageRepository;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Egor Gvozdetscky
@@ -15,54 +16,40 @@ import java.util.Map;
 @RequestMapping("message")
 public class MessageController {
 
-    private List<Map<String, String>> messages = new ArrayList<Map<String, String>>() {{
-        add(new HashMap<String, String>() {{ put("id", "1"); put("text", "First message");}});
-        add(new HashMap<String, String>() {{ put("id", "2"); put("text", "Second message");}});
-        add(new HashMap<String, String>() {{ put("id", "3"); put("text", "Third message");}});
-    }};
+    private MessageRepository messageRepository;
+
+    @Autowired
+    public MessageController(MessageRepository messageRepository) {
+        this.messageRepository = messageRepository;
+    }
 
     @GetMapping
-    public List<Map<String, String>> list() {
-        return messages;
+    public List<Message> list() {
+        return messageRepository.findAll();
     }
 
     @GetMapping("{id}")
-    public Map<String, String> getOne(@PathVariable String id) {
-        return getMessage(id);
+    public Message getOne(@PathVariable("id") Message message) {
+        return message;
     }
 
     @PostMapping
-    public Map<String, String> create(@RequestBody Map<String, String> message) {
-        message.put("id", String.valueOf(messages.size()));
-
-        messages.add(message);
-
-        return message;
+    public Message create(@RequestBody Message message) {
+        message.setCreationDate(LocalDateTime.now());
+        return messageRepository.save(message);
     }
 
     @PutMapping("{id}")
-    public Map<String, String> update(
-            @PathVariable String id,
-            @RequestBody Map<String, String> message) {
-        Map<String, String> messageFromDB = getMessage(id);
-        messageFromDB.putAll(message);
-        message.put("id", id);
+    public Message update(
+            @PathVariable("id") Message messageFromDB,
+            @RequestBody Message message) {
+        BeanUtils.copyProperties(message, messageFromDB, "id");
 
-        messages.add(message);
-
-        return message;
+        return messageRepository.save(messageFromDB);
     }
 
     @DeleteMapping("{id}")
-    public void delete(@PathVariable String id) {
-        Map<String, String> message = getMessage(id);
-        messages.remove(message);
-    }
-
-    private Map<String, String> getMessage(@PathVariable String id) {
-        return messages.stream()
-                .filter(message -> message.get("id").equals(id))
-                .findFirst()
-                .orElseThrow(NotFoundException::new);
+    public void delete(@PathVariable("id") Message message) {
+        messageRepository.delete(message);
     }
 }
