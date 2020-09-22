@@ -21,9 +21,10 @@ import java.time.LocalDateTime;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests()
-                .mvcMatchers("/")
-                .permitAll()
+        http
+                .antMatcher("/**")
+                .authorizeRequests()
+                .antMatchers("/", "/login", "/js/**", "/error**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable();
